@@ -36,7 +36,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     ];
 
     const usersMenuItems = [
-        { title: 'All Users', href: '#' },
+        { title: 'All Users', href: route('users.index') },
         { title: 'Add User', href: '#' },
         { title: 'Roles', href: '#' },
     ];
