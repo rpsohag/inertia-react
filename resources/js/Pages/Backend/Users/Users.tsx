@@ -473,14 +473,17 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
         onSortingChange: setSorting,
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
-        getRowId: (row) => row.id.toString(), // Use user ID instead of row index
+        getRowId: (row) => row.id.toString(),
         state: { sorting, columnVisibility, rowSelection },
         manualPagination: true,
         pageCount: users.last_page,
     })
 
     useEffect(() => {
-        if (debouncedSearch !== filters.search || perPage !== users.per_page || JSON.stringify(selectedStatuses) !== JSON.stringify(filters.status)) {
+        const currentSearch = filters.search || '';
+        const currentStatus = filters.status || [];
+
+        if (debouncedSearch !== currentSearch || perPage !== users.per_page || JSON.stringify(selectedStatuses) !== JSON.stringify(currentStatus)) {
             router.get(
                 route('users.index'),
                 {
