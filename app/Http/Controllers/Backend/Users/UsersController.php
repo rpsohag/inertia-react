@@ -17,7 +17,6 @@ class UsersController extends Controller
                     ->orWhere('email', 'like', "%{$search}%");
             })
             ->latest()
-            ->latest()
             ->paginate($request->input('per_page', 10))
             ->withQueryString();
 
@@ -38,22 +37,19 @@ class UsersController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'phone' => 'required|string|max:255',
+            'status' => 'required|in:active,inactive',
         ]);
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
+            'phone' => $validated['phone'],
+            'status' => $validated['status'],
         ]);
 
         return redirect()->route('users.index');
-    }
-
-    public function edit(User $user)
-    {
-        return Inertia::render('Backend/Users/Edit', [
-            'user' => $user,
-        ]);
     }
 
     public function update(Request $request, User $user)
@@ -61,9 +57,16 @@ class UsersController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'required|string|max:255',
+            'status' => 'required|in:active,inactive',
         ]);
 
-        $user->update($validated);
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'status' => $validated['status'],
+        ]);
 
         return redirect()->route('users.index');
     }

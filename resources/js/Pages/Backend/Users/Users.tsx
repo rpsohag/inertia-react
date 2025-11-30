@@ -2,7 +2,6 @@ import BackendLayout from '@/Layouts/BackendLayout';
 import { Head, router, Link } from '@inertiajs/react';
 import {
     ColumnDef,
-    ColumnFiltersState,
     SortingState,
     VisibilityState,
     flexRender,
@@ -27,8 +26,6 @@ import {
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -42,12 +39,22 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog"
+import { toast } from 'sonner'
 
 interface User {
     id: number;
     name: string;
     email: string;
+    phone: string;
+    status: string;
     created_at: string;
 }
 
@@ -89,7 +96,11 @@ const Users = ({ users, filters }: PageProps) => {
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [editName, setEditName] = useState('')
     const [editEmail, setEditEmail] = useState('')
+    const [editPhone, setEditPhone] = useState('')
+    const [editStatus, setEditStatus] = useState('')
     const [saving, setSaving] = useState(false)
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+    const [userToDelete, setUserToDelete] = useState<User | null>(null)
 
     const columns: ColumnDef<User>[] = [
         {
@@ -130,6 +141,16 @@ const Users = ({ users, filters }: PageProps) => {
             ),
         },
         {
+            accessorKey: 'phone',
+            header: 'Phone',
+            cell: ({ row }) => row.getValue('phone'),
+        },
+        {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => row.getValue('status'),
+        },
+        {
             accessorKey: 'created_at',
             header: 'Joined',
             cell: ({ row }) => new Date(row.getValue('created_at')).toLocaleDateString(),
@@ -158,19 +179,16 @@ const Users = ({ users, filters }: PageProps) => {
                             >
                                 Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
+                           <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => {
-                                    if (confirm('Are you sure you want to delete this user?')) {
-                                        router.delete(route('users.destroy', user.id), {
-                                            preserveState: false,
-                                            replace: true,
-                                        })
-                                    }
+                                    setUserToDelete(user)
+                                    setIsDeleteOpen(true)
                                 }}
                             >
                                 Delete
                             </DropdownMenuItem>
+
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )
@@ -197,6 +215,24 @@ const Users = ({ users, filters }: PageProps) => {
                 },
             }
         )
+        toast.success('User updated successfully')
+    }
+
+    const handleDelete = () => {
+        if (!userToDelete) return
+
+        router.delete(route('users.destroy', userToDelete.id), {
+            preserveState: false,
+            replace: true,
+            onSuccess: () => {
+                toast.success("User deleted successfully")
+                setIsDeleteOpen(false)
+                setUserToDelete(null)
+            },
+            onError: () => {
+                toast.error("Failed to delete user")
+            },
+        })
     }
 
     const table = useReactTable({
@@ -381,7 +417,7 @@ const Users = ({ users, filters }: PageProps) => {
                         </div>
                     </div>
                 </div>
-                <EditUserSheet
+                <EditUserModal
                     open={isEditOpen}
                     onOpenChange={(open) => {
                         setIsEditOpen(open)
@@ -389,24 +425,42 @@ const Users = ({ users, filters }: PageProps) => {
                     }}
                     name={editName}
                     email={editEmail}
+                    phone={editPhone}
+                    status={editStatus}
                     setName={setEditName}
                     setEmail={setEditEmail}
+                    setPhone={setEditPhone}
+                    setStatus={setEditStatus}
                     onSave={handleUpdate}
                     saving={saving}
                 />
+              <DeleteUserModal
+                    open={isDeleteOpen}
+                    onOpenChange={(open) => {
+                        setIsDeleteOpen(open)
+                        if (!open) setUserToDelete(null)
+                    }}
+                    user={userToDelete}
+                    onConfirm={handleDelete}
+                />
+
             </div>
         </BackendLayout>
     )
 }
 
 // Edit Modal
-function EditUserSheet({
+function EditUserModal({
     open,
     onOpenChange,
     name,
     email,
+    phone,
+    status,
     setName,
     setEmail,
+    setPhone,
+    setStatus,
     onSave,
     saving,
 }: {
@@ -414,35 +468,142 @@ function EditUserSheet({
     onOpenChange: (open: boolean) => void
     name: string
     email: string
+    phone: string
+    status: string
     setName: (v: string) => void
     setEmail: (v: string) => void
+    setPhone: (v: string) => void
+    setStatus: (v: string) => void
     onSave: () => void
     saving: boolean
 }) {
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="sm:max-w-md">
-                <SheetHeader>
-                    <SheetTitle>Edit User</SheetTitle>
-                    <SheetDescription>Update the user's details below.</SheetDescription>
-                </SheetHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Edit User</DialogTitle>
+                    <DialogDescription>
+                        Update the user's details below.
+                    </DialogDescription>
+                </DialogHeader>
+
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
                         <label className="text-sm font-medium" htmlFor="edit-name">Name</label>
-                        <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
+                        <Input
+                            id="edit-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
                     </div>
+
                     <div className="grid gap-2">
                         <label className="text-sm font-medium" htmlFor="edit-email">Email</label>
-                        <Input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <Input
+                            id="edit-email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
                     </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="edit-phone">Phone</label>
+                        <Input
+                            id="edit-phone"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="edit-status">Status</label>
+
+                        <Select
+                            value={status}
+                            onValueChange={(value) => setStatus(value)}
+                        >
+                            <SelectTrigger id="edit-status">
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                 </div>
-                <SheetFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-                    <Button onClick={onSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+                        Cancel
+                    </Button>
+                    <Button onClick={onSave} disabled={saving}>
+                        {saving ? "Saving..." : "Save"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
+
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+function DeleteUserModal({
+    open,
+    onOpenChange,
+    user,
+    onConfirm,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    user: User | null
+    onConfirm: () => void
+}) {
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete User?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {user ? (
+                            <>
+                                Are you sure you want to delete <b>{user.name}</b>?  
+                                This action cannot be undone.
+                            </>
+                        ) : (
+                            "Are you sure you want to delete this user?"
+                        )}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        className="bg-destructive text-white hover:bg-destructive/90"
+                        onClick={onConfirm}
+                    >
+                        Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+}
+
+
+
+
 
 export default Users
