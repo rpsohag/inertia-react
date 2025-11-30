@@ -11,10 +11,24 @@ class UsersController extends Controller
 {
     public function index(Request $request)
     {
+        // Get status counts
+        $statusCounts = [
+            'active' => User::where('status', 'active')->count(),
+            'inactive' => User::where('status', 'inactive')->count(),
+        ];
+
         $users = User::query()
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->when($request->status, function ($query, $statuses) {
+                // Handle array of statuses for multi-select
+                if (is_array($statuses)) {
+                    $query->whereIn('status', $statuses);
+                } else {
+                    $query->where('status', $statuses);
+                }
             })
             ->latest()
             ->paginate($request->input('per_page', 10))
@@ -22,9 +36,10 @@ class UsersController extends Controller
 
         return Inertia::render('Backend/Users/Users', [
             'users' => $users,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'status']),
+            'statusCounts' => $statusCounts,
         ]);
-        }
+    }
 
     public function create()
     {

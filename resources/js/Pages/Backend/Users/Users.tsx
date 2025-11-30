@@ -36,7 +36,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2, PlusCircle, X, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import {
@@ -47,6 +48,21 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+} from "@/components/ui/command"
+import { Separator } from "@/components/ui/separator"
 import { toast } from 'sonner'
 
 interface User {
@@ -79,14 +95,134 @@ interface PageProps {
     };
     filters: {
         search?: string;
+        status?: string[];
+    };
+    statusCounts: {
+        active: number;
+        inactive: number;
     };
 }
 
 /* columns moved inside Users component to access state for edit/delete actions */
 
-const Users = ({ users, filters }: PageProps) => {
+// Faceted Filter Component
+interface DataTableFacetedFilterProps {
+    title: string
+    options: {
+        label: string
+        value: string
+        count: number
+    }[]
+    selectedValues: string[]
+    onSelectionChange: (values: string[]) => void
+}
+
+function DataTableFacetedFilter({
+    title,
+    options,
+    selectedValues,
+    onSelectionChange,
+}: DataTableFacetedFilterProps) {
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 border-dashed">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    {title}
+                    {selectedValues.length > 0 && (
+                        <>
+                            <Separator orientation="vertical" className="mx-2 h-4" />
+                            <Badge
+                                variant="secondary"
+                                className="rounded-sm px-1 font-normal lg:hidden"
+                            >
+                                {selectedValues.length}
+                            </Badge>
+                            <div className="hidden space-x-1 lg:flex">
+                                {selectedValues.length > 2 ? (
+                                    <Badge
+                                        variant="secondary"
+                                        className="rounded-sm px-1 font-normal"
+                                    >
+                                        {selectedValues.length} selected
+                                    </Badge>
+                                ) : (
+                                    options
+                                        .filter((option) => selectedValues.includes(option.value))
+                                        .map((option) => (
+                                            <Badge
+                                                variant="secondary"
+                                                key={option.value}
+                                                className="rounded-sm px-1 font-normal"
+                                            >
+                                                {option.label}
+                                            </Badge>
+                                        ))
+                                )}
+                            </div>
+                        </>
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0" align="start">
+                <Command>
+                    <CommandInput placeholder={title} />
+                    <CommandList>
+                        <CommandEmpty>No results found.</CommandEmpty>
+                        <CommandGroup>
+                            {options.map((option) => {
+                                const isSelected = selectedValues.includes(option.value)
+                                return (
+                                    <CommandItem
+                                        key={option.value}
+                                        onSelect={() => {
+                                            if (isSelected) {
+                                                onSelectionChange(selectedValues.filter((value) => value !== option.value))
+                                            } else {
+                                                onSelectionChange([...selectedValues, option.value])
+                                            }
+                                        }}
+                                    >
+                                        <div
+                                            className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'opacity-50 [&_svg]:invisible'
+                                                }`}
+                                        >
+                                            <Check className="h-4 w-4" />
+                                        </div>
+                                        <span>{option.label}</span>
+                                        <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                                            {option.count}
+                                        </span>
+                                    </CommandItem>
+                                )
+                            })}
+                        </CommandGroup>
+                        {selectedValues.length > 0 && (
+                            <>
+                                <CommandSeparator />
+                                <CommandGroup>
+                                    <CommandItem
+                                        onSelect={() => onSelectionChange([])}
+                                        className="justify-center text-center"
+                                    >
+                                        Clear filters
+                                    </CommandItem>
+                                </CommandGroup>
+                            </>
+                        )}
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+const Users = ({ users, filters, statusCounts }: PageProps) => {
     const [search, setSearch] = useState(filters.search || '')
     const [debouncedSearch] = useDebounce(search, 300)
+    const [selectedStatuses, setSelectedStatuses] = useState<string[]>(filters.status || [])
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
@@ -201,7 +337,6 @@ const Users = ({ users, filters }: PageProps) => {
     const handleUpdate = () => {
         if (!selectedUser) return
         setSaving(true)
-        console.log(editStatus)
         router.put(
             route('users.update', selectedUser.id),
             { name: editName, email: editEmail, phone: editPhone, status: editStatus },
@@ -220,7 +355,6 @@ const Users = ({ users, filters }: PageProps) => {
                 },
             }
         )
-        console.log(editStatus)
     }
 
     const handleDelete = () => {
@@ -256,14 +390,18 @@ const Users = ({ users, filters }: PageProps) => {
     })
 
     useEffect(() => {
-        if (debouncedSearch !== filters.search || perPage !== users.per_page) {
+        if (debouncedSearch !== filters.search || perPage !== users.per_page || JSON.stringify(selectedStatuses) !== JSON.stringify(filters.status)) {
             router.get(
                 route('users.index'),
-                { search: debouncedSearch, per_page: perPage },
+                {
+                    search: debouncedSearch,
+                    per_page: perPage,
+                    status: selectedStatuses.length > 0 ? selectedStatuses : undefined
+                },
                 { preserveState: true, replace: true }
             );
         }
-    }, [debouncedSearch, perPage]);
+    }, [debouncedSearch, perPage, selectedStatuses]);
 
     return (
         <BackendLayout>
@@ -273,7 +411,7 @@ const Users = ({ users, filters }: PageProps) => {
                     <h2 className="text-2xl font-bold tracking-tight">Users</h2>
                 </div>
 
-                <div className="flex items-center py-4">
+                <div className="flex items-center py-4 gap-2">
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -283,6 +421,15 @@ const Users = ({ users, filters }: PageProps) => {
                             className="pl-8"
                         />
                     </div>
+                    <DataTableFacetedFilter
+                        title="Status"
+                        options={[
+                            { label: 'Active', value: 'active', count: statusCounts.active },
+                            { label: 'Inactive', value: 'inactive', count: statusCounts.inactive },
+                        ]}
+                        selectedValues={selectedStatuses}
+                        onSelectionChange={setSelectedStatuses}
+                    />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="ml-auto">
@@ -311,6 +458,29 @@ const Users = ({ users, filters }: PageProps) => {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
+                {selectedStatuses.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        {selectedStatuses.map((status) => (
+                            <Badge key={status} variant="secondary" className="rounded-sm px-1 font-normal">
+                                {status === 'active' ? 'Active' : 'Inactive'}
+                                <button
+                                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                    onClick={() => setSelectedStatuses(selectedStatuses.filter(s => s !== status))}
+                                >
+                                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                                </button>
+                            </Badge>
+                        ))}
+                        <Button
+                            variant="ghost"
+                            onClick={() => setSelectedStatuses([])}
+                            className="h-8 px-2 lg:px-3"
+                        >
+                            Clear filters
+                        </Button>
+                    </div>
+                )}
 
                 <div className="rounded-md border">
                     <Table>
