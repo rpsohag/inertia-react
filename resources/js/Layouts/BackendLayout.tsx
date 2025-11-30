@@ -17,8 +17,8 @@ export default function BackendLayout({ children }: PropsWithChildren) {
                         {children}
                     </main>
                 </SidebarInset>
-                <Toaster />
             </SidebarProvider>
+            <Toaster />
         </>
     );
 }

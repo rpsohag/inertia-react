@@ -174,12 +174,14 @@ const Users = ({ users, filters }: PageProps) => {
                                     setSelectedUser(user)
                                     setEditName(user.name)
                                     setEditEmail(user.email)
+                                    setEditPhone(user.phone)
+                                    setEditStatus(user.status)
                                     setIsEditOpen(true)
                                 }}
                             >
                                 Edit
                             </DropdownMenuItem>
-                           <DropdownMenuItem
+                            <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => {
                                     setUserToDelete(user)
@@ -199,30 +201,33 @@ const Users = ({ users, filters }: PageProps) => {
     const handleUpdate = () => {
         if (!selectedUser) return
         setSaving(true)
+        console.log(editStatus)
         router.put(
             route('users.update', selectedUser.id),
-            { name: editName, email: editEmail },
+            { name: editName, email: editEmail, phone: editPhone, status: editStatus },
             {
-                preserveState: false,
+                preserveState: true,
                 replace: true,
                 onSuccess: () => {
                     setSaving(false)
                     setIsEditOpen(false)
                     setSelectedUser(null)
+                    toast.success('User updated successfully')
                 },
                 onError: () => {
                     setSaving(false)
+                    toast.error('Failed to update user. Please check the form and try again.')
                 },
             }
         )
-        toast.success('User updated successfully')
+        console.log(editStatus)
     }
 
     const handleDelete = () => {
         if (!userToDelete) return
 
         router.delete(route('users.destroy', userToDelete.id), {
-            preserveState: false,
+            preserveState: true,
             replace: true,
             onSuccess: () => {
                 toast.success("User deleted successfully")
@@ -434,7 +439,7 @@ const Users = ({ users, filters }: PageProps) => {
                     onSave={handleUpdate}
                     saving={saving}
                 />
-              <DeleteUserModal
+                <DeleteUserModal
                     open={isDeleteOpen}
                     onOpenChange={(open) => {
                         setIsDeleteOpen(open)
@@ -551,14 +556,14 @@ function EditUserModal({
 
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 function DeleteUserModal({
@@ -580,7 +585,7 @@ function DeleteUserModal({
                     <AlertDialogDescription>
                         {user ? (
                             <>
-                                Are you sure you want to delete <b>{user.name}</b>?  
+                                Are you sure you want to delete <b>{user.name}</b>?
                                 This action cannot be undone.
                             </>
                         ) : (
