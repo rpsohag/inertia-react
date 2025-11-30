@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2, PlusCircle, X, Check, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2, PlusCircle, X, Check, Trash2, UserPlus, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import {
@@ -236,6 +236,17 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
     const [userToDelete, setUserToDelete] = useState<User | null>(null)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
+    const [isCreateOpen, setIsCreateOpen] = useState(false)
+    const [createName, setCreateName] = useState('')
+    const [createEmail, setCreateEmail] = useState('')
+    const [createPhone, setCreatePhone] = useState('')
+    const [createPassword, setCreatePassword] = useState('')
+    const [createPasswordConfirmation, setCreatePasswordConfirmation] = useState('')
+    const [createStatus, setCreateStatus] = useState('active')
+    const [creating, setCreating] = useState(false)
+    const [isImportOpen, setIsImportOpen] = useState(false)
+    const [importing, setImporting] = useState(false)
+
     const columns: ColumnDef<User>[] = [
         {
             id: "select",
@@ -397,6 +408,61 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
         )
     }
 
+    const handleCreate = () => {
+        setCreating(true)
+        router.post(
+            route('users.store'),
+            {
+                name: createName,
+                email: createEmail,
+                phone: createPhone,
+                password: createPassword,
+                password_confirmation: createPasswordConfirmation,
+                status: createStatus,
+            },
+            {
+                preserveState: true,
+                replace: true,
+                onSuccess: () => {
+                    setCreating(false)
+                    setIsCreateOpen(false)
+                    setCreateName('')
+                    setCreateEmail('')
+                    setCreatePhone('')
+                    setCreatePassword('')
+                    setCreatePasswordConfirmation('')
+                    setCreateStatus('active')
+                    toast.success('User created successfully')
+                },
+                onError: () => {
+                    setCreating(false)
+                    toast.error('Failed to create user. Please check the form and try again.')
+                },
+            }
+        )
+    }
+
+    const handleImport = (file: File) => {
+        setImporting(true)
+        const formData = new FormData()
+        formData.append('file', file)
+
+        router.post(route('users.import'), formData, {
+            forceFormData: true,
+            preserveState: true,
+            replace: true,
+            onSuccess: () => {
+                setImporting(false)
+                setIsImportOpen(false)
+                toast.success('Users imported successfully')
+            },
+            onError: () => {
+                setImporting(false)
+                toast.error('Failed to import users. Please check the file format.')
+            },
+        })
+    }
+
     const table = useReactTable({
         data: users.data,
         columns,
@@ -432,11 +498,34 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
             <Head title="Users" />
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold tracking-tight">Users</h2>
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight">Users</h2>
+                        <p>Manage all the users from here</p>
+                    </div>
+                    <div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="mr-2"
+                            onClick={() => setIsImportOpen(true)}
+                        >
+                            <Upload className="mr-2 h-4 w-4" />
+                            Import
+                        </Button>
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="ml-auto"
+                            onClick={() => setIsCreateOpen(true)}
+                        >
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Create
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex items-center py-4 gap-2">
-                   
+
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -455,7 +544,7 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                         selectedValues={selectedStatuses}
                         onSelectionChange={setSelectedStatuses}
                     />
-                     {Object.keys(rowSelection).length > 0 && (
+                    {Object.keys(rowSelection).length > 0 && (
                         <Button
                             variant="destructive"
                             size="sm"
@@ -465,6 +554,7 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                             Delete Selected ({Object.keys(rowSelection).length})
                         </Button>
                     )}
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="ml-auto">
@@ -658,6 +748,30 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                     onOpenChange={setIsBulkDeleteOpen}
                     count={Object.keys(rowSelection).length}
                     onConfirm={handleBulkDelete}
+                />
+                <CreateUserModal
+                    open={isCreateOpen}
+                    onOpenChange={setIsCreateOpen}
+                    name={createName}
+                    email={createEmail}
+                    phone={createPhone}
+                    password={createPassword}
+                    passwordConfirmation={createPasswordConfirmation}
+                    status={createStatus}
+                    setName={setCreateName}
+                    setEmail={setCreateEmail}
+                    setPhone={setCreatePhone}
+                    setPassword={setCreatePassword}
+                    setPasswordConfirmation={setCreatePasswordConfirmation}
+                    setStatus={setCreateStatus}
+                    onCreate={handleCreate}
+                    creating={creating}
+                />
+                <ImportUserModal
+                    open={isImportOpen}
+                    onOpenChange={setIsImportOpen}
+                    onImport={handleImport}
+                    importing={importing}
                 />
 
             </div>
@@ -854,6 +968,180 @@ function BulkDeleteModal({
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+    )
+}
+
+function CreateUserModal({
+    open,
+    onOpenChange,
+    name,
+    email,
+    phone,
+    password,
+    passwordConfirmation,
+    status,
+    setName,
+    setEmail,
+    setPhone,
+    setPassword,
+    setPasswordConfirmation,
+    setStatus,
+    onCreate,
+    creating,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    name: string
+    email: string
+    phone: string
+    password: string
+    passwordConfirmation: string
+    status: string
+    setName: (v: string) => void
+    setEmail: (v: string) => void
+    setPhone: (v: string) => void
+    setPassword: (v: string) => void
+    setPasswordConfirmation: (v: string) => void
+    setStatus: (v: string) => void
+    onCreate: () => void
+    creating: boolean
+}) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Create New User</DialogTitle>
+                    <DialogDescription>
+                        Add a new user to the system.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="create-name">Name</label>
+                        <Input
+                            id="create-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Enter user name"
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="create-email">Email</label>
+                        <Input
+                            id="create-email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter email address"
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="create-phone">Phone</label>
+                        <Input
+                            id="create-phone"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="Enter phone number"
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="create-password">Password</label>
+                        <Input
+                            id="create-password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter password"
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="create-password-confirmation">Confirm Password</label>
+                        <Input
+                            id="create-password-confirmation"
+                            type="password"
+                            value={passwordConfirmation}
+                            onChange={(e) => setPasswordConfirmation(e.target.value)}
+                            placeholder="Confirm password"
+                        />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="create-status">Status</label>
+                        <Select value={status} onValueChange={setStatus}>
+                            <SelectTrigger id="create-status">
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={creating}>
+                        Cancel
+                    </Button>
+                    <Button onClick={onCreate} disabled={creating}>
+                        {creating ? "Creating..." : "Create User"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function ImportUserModal({
+    open,
+    onOpenChange,
+    onImport,
+    importing,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    onImport: (file: File) => void
+    importing: boolean
+}) {
+    const [file, setFile] = useState<File | null>(null)
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Import Users</DialogTitle>
+                    <DialogDescription>
+                        Upload a CSV file to import users. The CSV should have headers: name, email, phone, password, status.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <label className="text-sm font-medium" htmlFor="import-file">CSV File</label>
+                        <Input
+                            id="import-file"
+                            type="file"
+                            accept=".csv"
+                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>
+                        Cancel
+                    </Button>
+                    <Button onClick={() => file && onImport(file)} disabled={!file || importing}>
+                        {importing ? "Importing..." : "Import"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
 

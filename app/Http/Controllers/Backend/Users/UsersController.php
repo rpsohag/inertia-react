@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\UsersDataImport;
 
 class UsersController extends Controller
 {
     public function index(Request $request)
     {
-        // Get status counts
         $statusCounts = [
             'active' => User::where('status', 'active')->count(),
             'inactive' => User::where('status', 'inactive')->count(),
@@ -23,7 +24,6 @@ class UsersController extends Controller
                     ->orWhere('email', 'like', "%{$search}%");
             })
             ->when($request->status, function ($query, $statuses) {
-                // Handle array of statuses for multi-select
                 if (is_array($statuses)) {
                     $query->whereIn('status', $statuses);
                 } else {
@@ -101,6 +101,17 @@ class UsersController extends Controller
         ]);
 
         User::whereIn('id', $validated['ids'])->delete();
+
+        return redirect()->route('users.index');
+    }
+
+    public function import(Request $request)
+    {
+        $validated = $request->validate([
+            'file' => 'required|file|mimes:csv,txt',
+        ]);
+
+        Excel::import(new UsersDataImport, $validated['file']);
 
         return redirect()->route('users.index');
     }
