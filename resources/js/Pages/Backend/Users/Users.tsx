@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2, PlusCircle, X, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2, PlusCircle, X, Check, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
 import {
@@ -103,9 +103,6 @@ interface PageProps {
     };
 }
 
-/* columns moved inside Users component to access state for edit/delete actions */
-
-// Faceted Filter Component
 interface DataTableFacetedFilterProps {
     title: string
     options: {
@@ -185,8 +182,8 @@ function DataTableFacetedFilter({
                                     >
                                         <div
                                             className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'opacity-50 [&_svg]:invisible'
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'opacity-50 [&_svg]:invisible'
                                                 }`}
                                         >
                                             <Check className="h-4 w-4" />
@@ -237,13 +234,17 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
     const [saving, setSaving] = useState(false)
     const [isDeleteOpen, setIsDeleteOpen] = useState(false)
     const [userToDelete, setUserToDelete] = useState<User | null>(null)
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
     const columns: ColumnDef<User>[] = [
         {
-            id: 'select',
+            id: "select",
             header: ({ table }) => (
                 <Checkbox
-                    checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
                 />
@@ -374,6 +375,28 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
         })
     }
 
+    const handleBulkDelete = () => {
+        const selectedIds = Object.keys(rowSelection)
+        if (selectedIds.length === 0) return
+
+        router.post(
+            route('users.bulk-delete'),
+            { ids: selectedIds },
+            {
+                preserveState: true,
+                replace: true,
+                onSuccess: () => {
+                    toast.success(`${selectedIds.length} user(s) deleted successfully`)
+                    setIsBulkDeleteOpen(false)
+                    setRowSelection({})
+                },
+                onError: () => {
+                    toast.error("Failed to delete users")
+                },
+            }
+        )
+    }
+
     const table = useReactTable({
         data: users.data,
         columns,
@@ -384,6 +407,7 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
         onSortingChange: setSorting,
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
+        getRowId: (row) => row.id.toString(), // Use user ID instead of row index
         state: { sorting, columnVisibility, rowSelection },
         manualPagination: true,
         pageCount: users.last_page,
@@ -412,6 +436,7 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                 </div>
 
                 <div className="flex items-center py-4 gap-2">
+                   
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -430,6 +455,16 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                         selectedValues={selectedStatuses}
                         onSelectionChange={setSelectedStatuses}
                     />
+                     {Object.keys(rowSelection).length > 0 && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setIsBulkDeleteOpen(true)}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Selected ({Object.keys(rowSelection).length})
+                        </Button>
+                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="ml-auto">
@@ -535,8 +570,8 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
 
                 <div className="flex items-center justify-between py-4">
                     <div className="flex-1 text-sm text-muted-foreground">
-                        {table.getFilteredSelectedRowModel().rows.length} of{' '}
-                        {table.getFilteredRowModel().rows.length} row(s) selected.
+                        {Object.keys(rowSelection).length} of{' '}
+                        {users.total} row(s) selected.
                     </div>
                     <div className="flex items-center space-x-6 lg:space-x-8">
                         <div className="flex items-center space-x-2">
@@ -617,6 +652,12 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                     }}
                     user={userToDelete}
                     onConfirm={handleDelete}
+                />
+                <BulkDeleteModal
+                    open={isBulkDeleteOpen}
+                    onOpenChange={setIsBulkDeleteOpen}
+                    count={Object.keys(rowSelection).length}
+                    onConfirm={handleBulkDelete}
                 />
 
             </div>
@@ -780,5 +821,40 @@ function DeleteUserModal({
 
 
 
+
+function BulkDeleteModal({
+    open,
+    onOpenChange,
+    count,
+    onConfirm,
+}: {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    count: number
+    onConfirm: () => void
+}) {
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {count} User{count !== 1 ? 's' : ''}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Are you sure you want to delete {count} selected user{count !== 1 ? 's' : ''}?
+                        This action cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        className="bg-destructive text-white hover:bg-destructive/90"
+                        onClick={onConfirm}
+                    >
+                        Delete {count} User{count !== 1 ? 's' : ''}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+}
 
 export default Users
