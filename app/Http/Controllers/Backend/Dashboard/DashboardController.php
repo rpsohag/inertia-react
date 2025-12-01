@@ -11,9 +11,6 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $users = User::all();
-        return Inertia::render('Backend/Dashboard/Dashboard', [
-            'users' => $users,
-        ]);
+        return Inertia::render('Backend/Dashboard/Dashboard');
     }
 }

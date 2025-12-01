@@ -30,7 +30,7 @@ class UsersController extends Controller
                     $query->where('status', $statuses);
                 }
             })
-            ->latest()
+            ->orderBy('id', 'desc')
             ->paginate($request->input('per_page', 10))
             ->withQueryString();
 
@@ -39,11 +39,6 @@ class UsersController extends Controller
             'filters' => $request->only(['search', 'status']),
             'statusCounts' => $statusCounts,
         ]);
-    }
-
-    public function create()
-    {
-        return Inertia::render('Backend/Users/Create');
     }
 
     public function store(Request $request)

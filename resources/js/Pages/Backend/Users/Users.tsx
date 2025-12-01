@@ -40,6 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown, MoreHorizontal, Settings2, PlusCircle, X, Check, Trash2, UserPlus, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from 'use-debounce';
+import TableSkeleton from '@/components/ui/table-skeleton';
 import {
     Dialog,
     DialogContent,
@@ -224,6 +225,7 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
     const [perPage, setPerPage] = useState(users.per_page || 10)
+    const [isLoading, setIsLoading] = useState(false)
 
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -491,10 +493,23 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                     per_page: perPage,
                     status: selectedStatuses.length > 0 ? selectedStatuses : undefined
                 },
-                { preserveState: true, replace: true }
+                {
+                    preserveState: true,
+                    replace: true,
+                }
             );
         }
     }, [debouncedSearch, perPage, selectedStatuses]);
+
+    useEffect(() => {
+        const removeStart = router.on('start', () => setIsLoading(true));
+        const removeFinish = router.on('finish', () => setIsLoading(false));
+
+        return () => {
+            removeStart();
+            removeFinish();
+        };
+    }, []);
 
     return (
         <BackendLayout>
@@ -631,7 +646,9 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                             ))}
                         </TableHeader>
                         <TableBody>
-                            {table.getRowModel().rows?.length ? (
+                            {isLoading ? (
+                                <TableSkeleton />
+                            ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
                                     <TableRow
                                         key={row.id}
@@ -687,7 +704,7 @@ const Users = ({ users, filters, statusCounts }: PageProps) => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                        <div className="flex w-[130px] items-center justify-center text-sm font-medium">
                             Page {users.current_page} of {users.last_page}
                         </div>
                         <div className="flex items-center space-x-2">
