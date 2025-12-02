@@ -33,12 +33,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
     ];
 
-    const usersMenuItems = [
-        { title: 'Profile', href: '#', icon: <User /> },
-        { title: 'Account', href: '#', icon: <Wrench /> },
-        { title: 'Appearance', href: '#', icon: <Palette /> },
-        { title: 'Notifications', href: '#', icon: <Bell /> },
-        { title: 'Display', href: '#', icon: <Eye /> },
+    const settingsMenuItems = [
+        { title: 'Profile', href: route('settings.profile'), icon: <User /> },
+        { title: 'Account', href: route('settings.account'), icon: <Wrench /> },
+        { title: 'Appearance', href: route('settings.appearance'), icon: <Palette /> },
+        { title: 'Notifications', href: route('settings.notifications'), icon: <Bell /> },
+        { title: 'Display', href: route('settings.display'), icon: <Eye /> },
     ];
 
     return (
@@ -66,82 +66,82 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarGroup>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                        {/* Dashboard */}
-                        {navItems.map((item) => (
-                            <SidebarMenuItem key={item.title}>
-                                <SidebarMenuButton asChild isActive={item.isActive}>
-                                    <Link href={item.href}>
-                                        {item.icon}
-                                        <span>{item.title}</span>
+                            {/* Dashboard */}
+                            {navItems.map((item) => (
+                                <SidebarMenuItem key={item.title}>
+                                    <SidebarMenuButton asChild isActive={item.isActive}>
+                                        <Link href={item.href}>
+                                            {item.icon}
+                                            <span>{item.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+
+                            {/* Users */}
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild isActive={route().current('users.*')}>
+                                    <Link href={route('users.index')}>
+                                        <UserPlus />
+                                        <span>Users</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                        ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Settings</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <Collapsible defaultOpen={false} className="group/collapsible">
+                                <SidebarMenuItem>
+                                    <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton>
+                                            <Settings />
+                                            <span>Settings</span>
+                                            <svg
+                                                className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 w-4 h-4"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </SidebarMenuButton>
+                                    </CollapsibleTrigger>
 
-                        {/* Users */}
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild isActive={route().current('users.*')}>
-                                <Link href={route('users.index')}>
-                                    <UserPlus />
-                                    <span>Users</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarGroupLabel>Settings</SidebarGroupLabel>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                        <Collapsible defaultOpen={false} className="group/collapsible">
+                                    <CollapsibleContent>
+                                        <SidebarMenuSub>
+                                            {settingsMenuItems.map((subItem) => (
+                                                <SidebarMenuSubItem key={subItem.title}>
+                                                    <SidebarMenuSubButton asChild>
+                                                        <Link href={subItem.href}>
+                                                            {subItem.icon}
+                                                            <span>{subItem.title}</span>
+                                                        </Link>
+                                                    </SidebarMenuSubButton>
+                                                </SidebarMenuSubItem>
+                                            ))}
+                                        </SidebarMenuSub>
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
+
                             <SidebarMenuItem>
-                                <CollapsibleTrigger asChild>
-                                    <SidebarMenuButton>
-                                        <Settings />
-                                        <span>Settings</span>
-                                        <svg
-                                            className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 w-4 h-4"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </SidebarMenuButton>
-                                </CollapsibleTrigger>
-
-                                <CollapsibleContent>
-                                    <SidebarMenuSub>
-                                        {usersMenuItems.map((subItem) => (
-                                            <SidebarMenuSubItem key={subItem.title}>
-                                                <SidebarMenuSubButton asChild>
-                                                    <Link href={subItem.href}>
-                                                        {subItem.icon}
-                                                        <span>{subItem.title}</span>
-                                                    </Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                        ))}
-                                    </SidebarMenuSub>
-                                </CollapsibleContent>
+                                <SidebarMenuButton asChild>
+                                    <Link href="#">
+                                        <BadgeQuestionMark />
+                                        <span>Help Center</span>
+                                    </Link>
+                                </SidebarMenuButton>
                             </SidebarMenuItem>
-                        </Collapsible>
-
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild>
-                                <Link href="#">
-                                    <BadgeQuestionMark />
-                                    <span>Help Center</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
-                </SidebarGroupContent>
-            </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-            <NavUser />
-        </SidebarFooter>
-        <SidebarRail />
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
+            <SidebarFooter>
+                <NavUser />
+            </SidebarFooter>
+            <SidebarRail />
         </Sidebar>
     );
 }
