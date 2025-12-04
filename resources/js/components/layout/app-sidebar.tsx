@@ -21,7 +21,7 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { NavUser } from '@/components/layout/nav-user';
-import { Bell, Eye, Home, Palette, Settings, User, UserPlus, Wrench, BadgeQuestionMark } from 'lucide-react';
+import { Bell, Eye, Home, Palette, Settings, User, UserPlus, Wrench, BadgeQuestionMark, Server, Key } from 'lucide-react';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const navItems = [
@@ -39,6 +39,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         { title: 'Appearance', href: route('settings.appearance'), icon: <Palette /> },
         { title: 'Notifications', href: route('settings.notifications'), icon: <Bell /> },
         { title: 'Display', href: route('settings.display'), icon: <Eye /> },
+    ];
+
+    const sshMenuItems = [
+        { title: 'Servers', href: route('ssh.servers'), icon: <Server /> },
+        { title: 'SSH Keys', href: route('ssh.ssh-keys'), icon: <Key /> },
     ];
 
     return (
@@ -87,6 +92,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+             <SidebarGroup>
+                    <SidebarGroupLabel>Servers</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <Collapsible defaultOpen={false} className="group/collapsible">
+                                <SidebarMenuItem>
+                                    <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton>
+                                            <Server />
+                                            <span>Servers</span>
+                                            <svg
+                                                className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 w-4 h-4"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                            >
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </SidebarMenuButton>
+                                    </CollapsibleTrigger>
+
+                                    <CollapsibleContent>
+                                        <SidebarMenuSub>
+                                            {sshMenuItems.map((subItem) => (
+                                                <SidebarMenuSubItem key={subItem.title}>
+                                                    <SidebarMenuSubButton asChild>
+                                                        <Link href={subItem.href}>
+                                                            {subItem.icon}
+                                                            <span>{subItem.title}</span>
+                                                        </Link>
+                                                    </SidebarMenuSubButton>
+                                                </SidebarMenuSubItem>
+                                            ))}
+                                        </SidebarMenuSub>
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
