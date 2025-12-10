@@ -75,6 +75,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { TerminalModal } from '@/components/TerminalModal';
 
 interface Server {
     id: number;
@@ -273,6 +274,9 @@ const Servers = ({ servers, filters, statusCounts, authTypeCounts, sshKeys }: Pa
     const [createAuthType, setCreateAuthType] = useState('password')
     const [creating, setCreating] = useState(false)
 
+    const [isTerminalOpen, setIsTerminalOpen] = useState(false)
+    const [terminalServer, setTerminalServer] = useState<Server | null>(null)
+
     const columns: ColumnDef<Server>[] = [
         {
             id: "select",
@@ -369,6 +373,14 @@ const Servers = ({ servers, filters, statusCounts, authTypeCounts, sshKeys }: Pa
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem
                                 onClick={() => {
+                                    setTerminalServer(server)
+                                    setIsTerminalOpen(true)
+                                }}
+                            >
+                                Open Terminal
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => {
                                     setSelectedServer(server)
                                     setEditName(server.name)
                                     setEditIpAddress(server.ip_address)
@@ -404,7 +416,7 @@ const Servers = ({ servers, filters, statusCounts, authTypeCounts, sshKeys }: Pa
         if (!selectedServer) return
         setSaving(true)
         router.put(
-            route('servers.update', selectedServer.id),
+            route('ssh.servers.update', selectedServer.id),
             {
                 name: editName,
                 ip_address: editIpAddress,
@@ -537,7 +549,7 @@ const Servers = ({ servers, filters, statusCounts, authTypeCounts, sshKeys }: Pa
             JSON.stringify(selectedAuthTypes) !== JSON.stringify(currentAuthType)
         ) {
             router.get(
-                route('servers.index'),
+                route('ssh.servers'),
                 {
                     search: debouncedSearch,
                     per_page: perPage,
@@ -865,6 +877,14 @@ const Servers = ({ servers, filters, statusCounts, authTypeCounts, sshKeys }: Pa
                     setAuthType={setCreateAuthType}
                     onCreate={handleCreate}
                     creating={creating}
+                />
+                <TerminalModal
+                    open={isTerminalOpen}
+                    onOpenChange={(open) => {
+                        setIsTerminalOpen(open)
+                        if (!open) setTerminalServer(null)
+                    }}
+                    server={terminalServer}
                 />
 
             </div>

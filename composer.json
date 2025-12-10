@@ -12,10 +12,11 @@
         "php": "^8.2",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^11.0",
+        "laravel/reverb": "^1.6",
         "laravel/telescope": "^5.10",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
-        "phpseclib/phpseclib": "^3.0",
+        "phpseclib/phpseclib": "~3.0",
         "tightenco/ziggy": "^2.6"
     },
     "require-dev": {

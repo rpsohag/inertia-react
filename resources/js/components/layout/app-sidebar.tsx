@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from "@inertiajs/react";
 import {
     Sidebar,
     SidebarContent,
@@ -14,37 +14,89 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
     SidebarRail,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { NavUser } from '@/components/layout/nav-user';
-import { Bell, Eye, Home, Palette, Settings, User, UserPlus, Wrench, BadgeQuestionMark, Server, Key } from 'lucide-react';
+} from "@/components/ui/collapsible";
+import { NavUser } from "@/components/layout/nav-user";
+import {
+    Bell,
+    Eye,
+    Home,
+    Palette,
+    Settings,
+    User,
+    UserPlus,
+    Wrench,
+    BadgeQuestionMark,
+    Server,
+    Key,
+} from "lucide-react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const navItems = [
         {
-            title: 'Dashboard',
-            href: route('dashboard'),
+            title: "Dashboard",
+            href: route("dashboard"),
             icon: <Home />,
-            isActive: route().current('dashboard'),
+            isActive: route().current("dashboard"),
         },
     ];
 
     const settingsMenuItems = [
-        { title: 'Profile', href: route('settings.profile'), icon: <User /> },
-        { title: 'Account', href: route('settings.account'), icon: <Wrench /> },
-        { title: 'Appearance', href: route('settings.appearance'), icon: <Palette /> },
-        { title: 'Notifications', href: route('settings.notifications'), icon: <Bell /> },
-        { title: 'Display', href: route('settings.display'), icon: <Eye /> },
+        {
+            title: "Profile",
+            href: route("settings.profile"),
+            icon: <User />,
+            isActive: route().current("settings.profile"),
+        },
+        {
+            title: "Account",
+            href: route("settings.account"),
+            icon: <Wrench />,
+            isActive: route().current("settings.account"),
+        },
+        {
+            title: "Appearance",
+            href: route("settings.appearance"),
+            icon: <Palette />,
+            isActive: route().current("settings.appearance"),
+        },
+        {
+            title: "Notifications",
+            href: route("settings.notifications"),
+            icon: <Bell />,
+            isActive: route().current("settings.notifications"),
+        },
+        {
+            title: "Display",
+            href: route("settings.display"),
+            icon: <Eye />,
+            isActive: route().current("settings.display"),
+        },
     ];
 
     const sshMenuItems = [
-        { title: 'Servers', href: route('ssh.servers'), icon: <Server /> },
-        { title: 'SSH Keys', href: route('ssh.ssh-keys'), icon: <Key /> },
+        {
+            title: "Servers",
+            href: route("ssh.servers"),
+            icon: <Server />,
+            isActive: route().current("ssh.servers"),
+        },
+        {
+            title: "SSH Keys",
+            href: route("ssh.ssh-keys"),
+            icon: <Key />,
+            isActive: route().current("ssh.ssh-keys"),
+        },
     ];
+
+    const isSettingsMenuActive = settingsMenuItems.some(
+        (item) => item.isActive
+    );
+    const isSshMenuActive = sshMenuItems.some((item) => item.isActive);
 
     return (
         <Sidebar collapsible="icon" variant="floating" {...props}>
@@ -52,14 +104,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={route('dashboard')}>
+                            <Link href={route("dashboard")}>
                                 <div className="flex items-center gap-2">
                                     <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                        <span className="font-bold text-sm">AP</span>
+                                        <span className="font-bold text-sm">
+                                            AP
+                                        </span>
                                     </div>
                                     <div className="flex flex-col gap-0.5 leading-none">
-                                        <span className="font-semibold">Admin Panel</span>
-                                        <span className="text-xs text-muted-foreground">Dashboard</span>
+                                        <span className="font-semibold">
+                                            Admin Panel
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                            Dashboard
+                                        </span>
                                     </div>
                                 </div>
                             </Link>
@@ -74,7 +132,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             {/* Dashboard */}
                             {navItems.map((item) => (
                                 <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild isActive={item.isActive}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={item.isActive}
+                                    >
                                         <Link href={item.href}>
                                             {item.icon}
                                             <span>{item.title}</span>
@@ -85,8 +146,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                             {/* Users */}
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild isActive={route().current('users.*')}>
-                                    <Link href={route('users.index')}>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={route().current("users.*")}
+                                >
+                                    <Link href={route("users.index")}>
                                         <UserPlus />
                                         <span>Users</span>
                                     </Link>
@@ -95,21 +159,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-             <SidebarGroup>
+                <SidebarGroup>
                     <SidebarGroupLabel>Servers</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            <Collapsible defaultOpen={false} className="group/collapsible">
+                            <Collapsible
+                                defaultOpen={isSshMenuActive}
+                                className="group/collapsible"
+                            >
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton>
+                                        <SidebarMenuButton
+                                            isActive={isSshMenuActive}
+                                        >
                                             <Server />
                                             <span>Servers</span>
                                             <svg
                                                 className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 w-4 h-4"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
                                             >
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M9 5l7 7-7 7"
+                                                />
                                             </svg>
                                         </SidebarMenuButton>
                                     </CollapsibleTrigger>
@@ -117,11 +193,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     <CollapsibleContent>
                                         <SidebarMenuSub>
                                             {sshMenuItems.map((subItem) => (
-                                                <SidebarMenuSubItem key={subItem.title}>
-                                                    <SidebarMenuSubButton asChild>
-                                                        <Link href={subItem.href}>
+                                                <SidebarMenuSubItem
+                                                    key={subItem.title} 
+                                                >
+                                                    <SidebarMenuSubButton
+                                                        asChild
+                                                        isActive={subItem.isActive}
+                                                    >
+                                                        <Link
+                                                            href={subItem.href}
+                                                        >
                                                             {subItem.icon}
-                                                            <span>{subItem.title}</span>
+                                                            <span>
+                                                                {subItem.title}
+                                                            </span>
                                                         </Link>
                                                     </SidebarMenuSubButton>
                                                 </SidebarMenuSubItem>
@@ -137,33 +222,60 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarGroupLabel>Settings</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            <Collapsible defaultOpen={false} className="group/collapsible">
+                            <Collapsible
+                                defaultOpen={isSettingsMenuActive}
+                                className="group/collapsible"
+                            >
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton>
+                                        <SidebarMenuButton
+                                            isActive={isSettingsMenuActive}
+                                        >
                                             <Settings />
                                             <span>Settings</span>
                                             <svg
                                                 className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90 w-4 h-4"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
                                             >
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M9 5l7 7-7 7"
+                                                />
                                             </svg>
                                         </SidebarMenuButton>
                                     </CollapsibleTrigger>
 
                                     <CollapsibleContent>
                                         <SidebarMenuSub>
-                                            {settingsMenuItems.map((subItem) => (
-                                                <SidebarMenuSubItem key={subItem.title}>
-                                                    <SidebarMenuSubButton asChild>
-                                                        <Link href={subItem.href}>
-                                                            {subItem.icon}
-                                                            <span>{subItem.title}</span>
-                                                        </Link>
-                                                    </SidebarMenuSubButton>
-                                                </SidebarMenuSubItem>
-                                            ))}
+                                            {settingsMenuItems.map(
+                                                (subItem) => (
+                                                    <SidebarMenuSubItem
+                                                        key={subItem.title} 
+                                                    >
+                                                        <SidebarMenuSubButton
+                                                            asChild
+                                                            isActive={subItem.isActive}
+                                                        >
+                                                            <Link
+                                                                href={
+                                                                    subItem.href
+                                                                }
+                                                            >
+                                                                {subItem.icon}
+                                                                <span>
+                                                                    {
+                                                                        subItem.title
+                                                                    }
+                                                                </span>
+                                                            </Link>
+                                                        </SidebarMenuSubButton>
+                                                    </SidebarMenuSubItem>
+                                                )
+                                            )}
                                         </SidebarMenuSub>
                                     </CollapsibleContent>
                                 </SidebarMenuItem>

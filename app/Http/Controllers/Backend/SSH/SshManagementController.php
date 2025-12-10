@@ -20,7 +20,6 @@ class SshManagementController extends Controller
 
         $query = Server::query();
 
-        // Search
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -29,19 +28,15 @@ class SshManagementController extends Controller
             });
         }
 
-        // Filter by status
         if (! empty($statusFilter)) {
             $query->whereIn('status', $statusFilter);
         }
-
-        // Filter by auth_type
         if (! empty($authTypeFilter)) {
             $query->whereIn('auth_type', $authTypeFilter);
         }
 
         $servers = $query->paginate($perPage)->withQueryString();
 
-        // Get counts for filters
         $statusCounts = [
             'active' => Server::where('status', 'active')->count(),
             'inactive' => Server::where('status', 'inactive')->count(),
@@ -80,11 +75,21 @@ class SshManagementController extends Controller
             'auth_type' => 'required|in:password,private_key',
         ]);
 
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = Auth::user()->id;
 
-        Server::create($validated);
+        Server::create([
+            'name' => isset($validated['name']) ? $validated['name'] : '',
+            'ip_address' => isset($validated['ip_address']) ? $validated['ip_address'] : '',
+            'port' => isset($validated['port']) ? $validated['port'] : '',
+            'username' => isset($validated['username']) ? $validated['username'] : '',
+            'password' => isset($validated['password']) ? $validated['password'] : '',
+            'ssh_key_id' => isset($validated['ssh_key_id']) ? $validated['ssh_key_id'] : null,
+            'status' => isset($validated['status']) ? $validated['status'] : 'inactive',
+            'auth_type' => isset($validated['auth_type']) ? $validated['auth_type'] : 'password',
+            'user_id' => $validated['user_id'],
+        ]);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Server created successfully');
     }
 
     public function update(Request $request, Server $server)
@@ -100,16 +105,25 @@ class SshManagementController extends Controller
             'password' => 'nullable|string',
         ]);
 
-        $server->update($validated);
+        $server->update([
+            'name' => isset($validated['name']) ? $validated['name'] : $server->name,
+            'ip_address' => isset($validated['ip_address']) ? $validated['ip_address'] : $server->ip_address,
+            'port' => isset($validated['port']) ? $validated['port'] : $server->port,
+            'username' => isset($validated['username']) ? $validated['username'] : $server->username,
+            'password' => isset($validated['password']) ? $validated['password'] : $server->password,
+            'ssh_key_id' => isset($validated['ssh_key_id']) ? $validated['ssh_key_id'] : $server->ssh_key_id,
+            'status' => isset($validated['status']) ? $validated['status'] : $server->status,
+            'auth_type' => isset($validated['auth_type']) ? $validated['auth_type'] : $server->auth_type,
+        ]);
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Server updated successfully');
     }
 
     public function destroy(Server $server)
     {
         $server->delete();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Server deleted successfully');
     }
 
     public function bulkDelete(Request $request)
@@ -121,10 +135,9 @@ class SshManagementController extends Controller
 
         Server::whereIn('id', $validated['ids'])->delete();
 
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Servers deleted successfully');
     }
 
-    // SSH Keys Methods
     public function sshKeys(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -133,7 +146,6 @@ class SshManagementController extends Controller
 
         $query = SshKey::query();
 
-        // Search
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -141,14 +153,12 @@ class SshManagementController extends Controller
             });
         }
 
-        // Filter by type
         if (! empty($typeFilter)) {
             $query->whereIn('type', $typeFilter);
         }
 
         $sshKeys = $query->paginate($perPage)->withQueryString();
 
-        // Get counts for filters
         $typeCounts = [
             'rsa' => SshKey::where('type', 'rsa')->count(),
             'ed25519' => SshKey::where('type', 'ed25519')->count(),
@@ -174,7 +184,6 @@ class SshManagementController extends Controller
             'passphrase' => 'nullable|string',
         ]);
 
-        // Generate SSH key pair using the service
         $sshKeyService = new \App\Services\SshKeyService();
         $keyPair = $sshKeyService->generateKeyPair(
             $validated['algorithm'],
@@ -182,7 +191,6 @@ class SshManagementController extends Controller
             $validated['passphrase'] ?? null
         );
 
-        // Store in database
         $sshKey = SshKey::create([
             'user_id' => Auth::user()->id,
             'name' => $validated['name'],
@@ -193,7 +201,6 @@ class SshManagementController extends Controller
             'fingerprint' => $keyPair['fingerprint'],
         ]);
 
-        // Return the created SSH key with the generated keys
         return response()->json([
             'success' => true,
             'message' => 'SSH key generated successfully',

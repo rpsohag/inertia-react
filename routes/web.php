@@ -8,6 +8,7 @@ use App\Http\Controllers\Backend\Settings\DisplayController;
 use App\Http\Controllers\Backend\Settings\NotificationsController;
 use App\Http\Controllers\Backend\Settings\ProfileController;
 use App\Http\Controllers\Backend\SSH\SshManagementController;
+use App\Http\Controllers\Backend\SSH\SshWebSocketController;
 use App\Http\Controllers\Backend\Users\UsersController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -52,6 +53,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/ssh-keys', 'storeSshKey')->name('ssh-keys.store');
         Route::put('/ssh-keys/{sshKey}', 'updateSshKey')->name('ssh-keys.update');
         Route::delete('/ssh-keys/{sshKey}', 'destroySshKey')->name('ssh-keys.destroy');
+    });
+
+    // SSH WebSocket Routes
+    Route::prefix('ssh/websocket')->name('ssh.websocket.')->controller(SshWebSocketController::class)->group(function () {
+        Route::post('/connect', 'connect')->name('connect');
+        Route::post('/input', 'sendInput')->name('input');
+        Route::post('/disconnect', 'disconnect')->name('disconnect');
     });
 
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
